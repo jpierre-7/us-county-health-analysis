@@ -18,6 +18,7 @@ CREATE TABLE fact_observations (
     numerator FLOAT,
     denominator FLOAT,
     raw_value FLOAT,
+    raw_value_missing BOOLEAN,
     ci_lower FLOAT,
     ci_upper FLOAT,
     FOREIGN KEY (fipscode) REFERENCES county(fipscode),

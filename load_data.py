@@ -1,6 +1,10 @@
 # Cleaning data and loading it into a database
 import pandas as pd
 from sqlalchemy import create_engine
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def load_data(file_path, db_url, table_name):
     # ----Cleaning---- #
@@ -32,4 +36,25 @@ def load_data(file_path, db_url, table_name):
         'State': 'state_name',
         'County': 'county_name'})
     
+    # Saving cleaned data to a new CSV file
+    df.to_csv('data/cleaned_county_health_rankings.csv', index=False)
+    
     # ----Loading---- #
+    # Create a SQLAlchemy engine
+    engine = create_engine(db_url)
+
+    # Build 3 dataframes for the 3 tables
+    county_df = df[['fipscode', 'state_name', 'county_name']].drop_duplicates()
+    measure_df = df[['measure_id', 'measure_name']].drop_duplicates()
+    fact_observations_df = df[['fipscode', 'measure_id', 'year_start', 'year_end', 'numerator', 'denominator', 'raw_value', 'raw_value_missing', 'ci_lower', 'ci_upper']]
+
+    # Loading tables in order
+    county_df.to_sql('county', con=engine, if_exists='append', index=False)
+    measure_df.to_sql('measure', con=engine, if_exists='append', index=False)
+    fact_observations_df.to_sql('fact_observations', con=engine, if_exists='append', index=False)
+
+# Calling the function
+if __name__ == '__main__':
+    load_data('data/County_Health_Rankings.csv', os.getenv('DATABASE_URL'), None)
+
+
