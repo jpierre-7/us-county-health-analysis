@@ -11,20 +11,34 @@ def load_data(file_path, db_url, table_name):
     # Load data from CSV file
     df = pd.read_csv(file_path)
 
-    # Drop rows with missing values in 'Measure name' and 'fipscode' columns
+    # Drop rows with missing values in 'Measure name', 'fipscode', and 'County' columns
     df = df[df['Measure name'].notna()]
     df = df[df['fipscode'].notna()]
+    df = df[df['County'].notna()]
+
+    # Formating 'fipscode'
+    df['fipscode'] = df['fipscode'].astype(int).astype(str).str.zfill(5)
+    df = df[df['fipscode'] != '00000']
 
     # Split 'Year span' into 'year_start' and 'year_end'
     split = df['Year span'].str.split('-', expand=True)
-    df['year_start'] = split[0]
-    df['year_end'] = split[1].fillna(split[0]) 
+    df['year_start'] = split[0].replace('.', None)
+    df['year_end'] = split[1].fillna(split[0]).replace('.', None)
+
+    # Convert to integer (nullable)
+    df['year_start'] = pd.to_numeric(df['year_start'], errors='coerce')
+    df['year_end'] = pd.to_numeric(df['year_end'], errors='coerce')
+
+    # Handle null year_start and year_end produced by Kalawao County, Hawaii
+    df = df[df['year_start'].notna()]
 
     # Boolean flag for null raw_value
     df['raw_value_missing'] = df['Raw value'].isna()
 
+    # Drop unnecessary columns
     df = df.drop(columns=['Data Release Year', 'State code', 'County code', 'Year span'])
 
+    # Rename columns to match database schema
     df = df.rename(columns={
         'Measure name': 'measure_name',
         'Measure id': 'measure_id',
@@ -44,7 +58,7 @@ def load_data(file_path, db_url, table_name):
     engine = create_engine(db_url)
 
     # Build 3 dataframes for the 3 tables
-    county_df = df[['fipscode', 'state_name', 'county_name']].drop_duplicates()
+    county_df = df[['fipscode', 'state_name', 'county_name']].drop_duplicates(subset=['fipscode'], keep='first')
     measure_df = df[['measure_id', 'measure_name']].drop_duplicates()
     fact_observations_df = df[['fipscode', 'measure_id', 'year_start', 'year_end', 'numerator', 'denominator', 'raw_value', 'raw_value_missing', 'ci_lower', 'ci_upper']]
 
