@@ -20,7 +20,6 @@ CREATE TABLE fact_observations (
     raw_value FLOAT,
     ci_lower FLOAT,
     ci_upper FLOAT,
-    data_release_year INTEGER,
     FOREIGN KEY (fipscode) REFERENCES county(fipscode),
     FOREIGN KEY (measure_id) REFERENCES measure(measure_id)
 );
