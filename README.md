@@ -2,6 +2,8 @@
 
 A full-stack data analytics project built with Python, PostgreSQL, Flask, and Plotly Dash. Analyzes 300k+ rows of US county-level public health data from the County Health Rankings dataset.
 
+\* You will see 52 states in the cleaned dataset. This isn't an error as both Washington DC and Puerto Rico are treated as their own entity for census and public health data purposes.
+
 **Live demo:** _coming soon_
 
 ---
