@@ -4,7 +4,8 @@ A full-stack data analytics project built with Python, PostgreSQL, Flask, and Pl
 
 \* You will see 52 states in the cleaned dataset. This isn't an error as both Washington DC and Puerto Rico are treated as their own entity for census and public health data purposes.
 
-**Live demo:** _coming soon_
+**Live demo:**
+https://us-county-health-dashboard.onrender.com
 
 ---
 
