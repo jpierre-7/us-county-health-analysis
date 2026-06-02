@@ -2,11 +2,14 @@ from dash import Dash, html, dcc, Input, Output
 import plotly.express as px
 import requests
 import pandas as pd
+import os
 
 app = Dash(__name__)
 
+API_BASE = 'https://us-county-health-api.onrender.com'
+
 # Fetch measures from Flask API
-response = requests.get('http://localhost:5000/api/measures')
+response = requests.get(f'{API_BASE}/api/measures')
 measures = response.json()
 measure_options = [{'label': m['measure_name'], 'value': m['measure_name']} for m in measures]
 
@@ -31,7 +34,7 @@ app.layout = html.Div([
 )
 def update_charts(measure_name):
     # Fetch bar chart data
-    bar_response = requests.get(f'http://localhost:5000/api/measures/{measure_name}/by_state')
+    bar_response = requests.get(f'{API_BASE}/api/measures/{measure_name}/by_state')
     bar_data = pd.DataFrame(bar_response.json())
     bar_data = bar_data[~bar_data['state_name'].isin(['PR', 'DC'])]
     bar_data['avg_value'] = pd.to_numeric(bar_data['avg_value'])
@@ -45,7 +48,7 @@ def update_charts(measure_name):
     )
     
     # Fetch trend data
-    trend_response = requests.get(f'http://localhost:5000/api/measures/{measure_name}/trend')
+    trend_response = requests.get(f'{API_BASE}/api/measures/{measure_name}/trend')
     trend_data = pd.DataFrame(trend_response.json())
     trend_data['avg_value'] = pd.to_numeric(trend_data['avg_value'])
     
@@ -57,7 +60,7 @@ def update_charts(measure_name):
     )
 
     # Fetch data for map
-    map_response = requests.get(f'http://localhost:5000/api/measures/{measure_name}/by_state')
+    map_response = requests.get(f'{API_BASE}/api/measures/{measure_name}/by_state')
     map_data = pd.DataFrame(map_response.json())
 
     # Exclude Puerto Rico (PR) and Washington, D.C. (DC) from the map
@@ -83,4 +86,4 @@ def update_charts(measure_name):
     ]
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8050)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
