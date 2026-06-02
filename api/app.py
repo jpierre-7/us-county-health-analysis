@@ -58,4 +58,4 @@ def get_measure_trend(measure_name):
     return jsonify([dict(row._mapping) for row in result])
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
