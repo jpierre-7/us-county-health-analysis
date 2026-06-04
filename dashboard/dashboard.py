@@ -3,6 +3,7 @@ import plotly.express as px
 import requests
 import pandas as pd
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 app = Dash(__name__)
 
@@ -33,8 +34,16 @@ app.layout = html.Div([
     Input('measure-dropdown', 'value')
 )
 def update_charts(measure_name):
-    # Fetch bar chart data
-    bar_response = requests.get(f'{API_BASE}/api/measures/{measure_name}/by_state')
+    # Fetch all chart data in parallel
+    with ThreadPoolExecutor() as executor:
+        by_state_future = executor.submit(requests.get, f'{API_BASE}/api/measures/{measure_name}/by_state')
+        trend_future = executor.submit(requests.get, f'{API_BASE}/api/measures/{measure_name}/trend')
+
+    bar_response = by_state_future.result()
+    trend_response = trend_future.result()
+    map_response = by_state_future.result()
+
+    # Process bar chart data
     bar_data = pd.DataFrame(bar_response.json())
     bar_data = bar_data[~bar_data['state_name'].isin(['PR', 'DC'])]
     bar_data['avg_value'] = pd.to_numeric(bar_data['avg_value'])
@@ -48,7 +57,7 @@ def update_charts(measure_name):
     )
     
     # Fetch trend data
-    trend_response = requests.get(f'{API_BASE}/api/measures/{measure_name}/trend')
+    # Not excluding PR and DC from trend data as it is national level data
     trend_data = pd.DataFrame(trend_response.json())
     trend_data['avg_value'] = pd.to_numeric(trend_data['avg_value'])
     
@@ -60,7 +69,6 @@ def update_charts(measure_name):
     )
 
     # Fetch data for map
-    map_response = requests.get(f'{API_BASE}/api/measures/{measure_name}/by_state')
     map_data = pd.DataFrame(map_response.json())
 
     # Exclude Puerto Rico (PR) and Washington, D.C. (DC) from the map
