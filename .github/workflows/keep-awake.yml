@@ -1,0 +1,29 @@
+name: Supabase & Render Keep-Alive Ping
+
+on:
+  schedule:
+    # Runs every 3 days at 06:00 UTC (well within Supabase's 7-day auto-pause limit)
+    - cron: '0 6 */3 * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+jobs:
+  ping-api-and-database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API Health & Database Endpoint
+        run: |
+          echo "Pinging Flask API & Supabase database..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" https://us-county-health-api.onrender.com/api/health)
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Response Body: $BODY"
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Warning: API or DB health check returned status $HTTP_STATUS"
+            # Secondary query to wake up measure table if health check is still warming up
+            curl -s https://us-county-health-api.onrender.com/api/measures > /dev/null
+          else
+            echo "Successfully pinged API and kept Supabase database active!"
+          fi
