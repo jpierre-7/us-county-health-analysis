@@ -13,17 +13,23 @@ jobs:
       - name: Ping API Health & Database Endpoint
         run: |
           echo "Pinging Flask API & Supabase database..."
-          RESPONSE=$(curl -s -w "\n%{http_code}" https://us-county-health-api.onrender.com/api/health)
+          RESPONSE=$(curl -s --max-time 60 -w "\n%{http_code}" https://us-county-health-api.onrender.com/api/health || true)
           HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
           BODY=$(echo "$RESPONSE" | sed '$d')
           
-          echo "HTTP Status: $HTTP_STATUS"
+          echo "API Health HTTP Status: $HTTP_STATUS"
           echo "Response Body: $BODY"
           
           if [ "$HTTP_STATUS" -ne 200 ]; then
             echo "Warning: API or DB health check returned status $HTTP_STATUS"
             # Secondary query to wake up measure table if health check is still warming up
-            curl -s https://us-county-health-api.onrender.com/api/measures > /dev/null
+            curl -s --max-time 60 https://us-county-health-api.onrender.com/api/measures > /dev/null || true
           else
             echo "Successfully pinged API and kept Supabase database active!"
           fi
+
+      - name: Ping Dashboard Endpoint
+        run: |
+          echo "Pinging Dash Dashboard..."
+          DASH_STATUS=$(curl -s --max-time 60 -o /dev/null -w "%{http_code}" https://us-county-health-dashboard.onrender.com/ || true)
+          echo "Dashboard HTTP Status: $DASH_STATUS"
